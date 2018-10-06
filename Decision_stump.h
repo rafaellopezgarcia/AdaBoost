@@ -5,7 +5,7 @@
 struct Weighted_labeled_sample;
 struct DecisionStump;
 using wlabeled_data_t = std::vector<Weighted_labeled_sample>;
-using classifiers_t = std::vector<DecisionStump>;
+
 
 enum class direction_t{
     left,
@@ -13,10 +13,20 @@ enum class direction_t{
 };
 
 struct Weighted_labeled_sample{
-    explicit Weighted_labeled_sample(const Labeled_sample & ls);
-    const std::vector<float> & features;
+    explicit Weighted_labeled_sample(Labeled_sample & ls);
+    ~Weighted_labeled_sample()=default;
+    Weighted_labeled_sample &operator=(const Weighted_labeled_sample & rhs) = delete;
+
+    const std::vector<float> &features;
     const label_t & label;
     float weight;
+};
+
+struct Sorting_sample{
+    explicit Sorting_sample(const std::vector<float> &features, unsigned int ind);
+    Sorting_sample &operator=(const Sorting_sample & rhs);
+    const std::vector<float> &features;
+    unsigned int ind;
 };
 
 struct DecisionStump{
@@ -26,6 +36,11 @@ struct DecisionStump{
     float voting_weight;
 };
 
+/* If direction = left
+ * Samples on the left are class0, samples on the right, class1
+ * If direction = right
+ * Samples on the left are class1, samples on the right, class0
+ */
 template <typename T>
 class Decision_stump_prediction : public DecisionStump{
 public:
@@ -37,11 +52,6 @@ public:
         return confidence;
     }
 
-    /* If direction = left
-     * Samples on the left are class0, samples on the right, class1
-     * If direction = right
-     * Samples on the left are class1, samples on the right, class0
-     */
     label_t classify(const T & datum){
         float feature_value{datum.features[dimension]};
         if (feature_value < threshold && direction == direction_t::left) {
@@ -61,12 +71,17 @@ public:
 
 class Decision_stump_learning : public DecisionStump{
 public:
+    Decision_stump_learning(wlabeled_data_t & training_data);
+    ~Decision_stump_learning()= default;
     DecisionStump learn_stump();
 
 private:
-    wlabeled_data_t & training_data;
+    wlabeled_data_t & training_data_;
+    std::vector<std::vector<int>> order_;
+    unsigned int n_dim_;
+    unsigned int n_training_samples_;
     void sort();
-    std::vector<float> compute_cum_sum();
+    std::vector<float> compute_cum_sum(unsigned int dim);
     unsigned char select_dimension();
     direction_t select_direction();
     void update_wclassifier();

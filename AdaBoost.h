@@ -4,6 +4,8 @@
 
 namespace adaboost{
 
+    using model_t = std::vector<DecisionStump>;
+
 
     enum class weight_t{
         even
@@ -14,7 +16,7 @@ namespace adaboost{
     class Learning{
     public:
         explicit Learning(unsigned short K = 10, weight_t weight_init = weight_t::even);
-        void train_model(const labeled_data_t & data);
+        void train_model(labeled_data_t & data);
         void helper_function();
 
     private:
@@ -23,18 +25,18 @@ namespace adaboost{
         weight_t weight_init_; // Weight initialization type
 
         // Input
-        wlabeled_data_t training_data;
+        wlabeled_data_t training_data_;
         unsigned int N_; // Number of training samples
 
         // Output
-        classifiers_t model_;
+        model_t model_;
 
         typedef void(Learning::*fptr)();
         std::map<weight_t, fptr> iw{
             {weight_t::even, &Learning::init_weights_even}
         };
 
-        void reference_data(const labeled_data_t & data);
+        void reference_data(labeled_data_t & data);
         void init_weights();
         void init_weights_even();
         void recompute_weights();
@@ -48,7 +50,7 @@ namespace adaboost{
 
         std::vector<label_t> predict_labels(const T & udata);
     private:
-        classifiers_t model;
+        model_t model;
         T udata;
 
         std::vector<float> compute_confidence();

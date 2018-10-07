@@ -38,7 +38,7 @@ void Learning::init_weights_even(){
 
 void Learning::recompute_weights(){
     for(auto & datum : training_data_){
-        Decision_stump_prediction<Weighted_labeled_sample> dsp;
+        //Decision_stump_prediction<Weighted_labeled_sample> dsp;
         float Z = compute_normalizer();
         //char error= static_cast<char>(dsp.classify(datum)) * static_cast<char>(datum.label);
 

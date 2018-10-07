@@ -47,6 +47,7 @@ int main() {
     //std::cout << v.size() << " " << acc << std::endl;
 
 
-
+    //auto max = std::max_element(v.begin(),v.end());
+    //std::cout << *max << std::endl;
     return 0;
 }

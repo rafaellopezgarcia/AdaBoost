@@ -20,13 +20,23 @@ Sorting_sample &Sorting_sample::operator=(const Sorting_sample & rhs){
     return *this;
 }
 
+DecisionStump::DecisionStump() {}
+
+DecisionStump::DecisionStump(unsigned char dimension,
+                             float threshold,
+                             direction_t direction) : dimension(dimension),
+                                                      threshold(threshold),
+                                                      direction(direction) {
+
+}
+
 Decision_stump_learning::Decision_stump_learning(wlabeled_data_t & training_data):
                          training_data_(training_data),
                          n_training_samples_(training_data_.size())
 {
     if (!training_data.empty()){
         n_dim_ = training_data_[0].features.size();
-        order_.resize(n_dim_, std::vector<int>(n_training_samples_,0));
+        order_.resize(n_dim_, std::vector<unsigned int>(n_training_samples_,0));
         sort();
     }
 };
@@ -34,7 +44,7 @@ Decision_stump_learning::Decision_stump_learning(wlabeled_data_t & training_data
 DecisionStump Decision_stump_learning::learn_stump(){
     DecisionStump ds;
 
-    for(unsigned int dim = 0; dim < n_dim_; ++dim) {
+    for(unsigned char dim = 0; dim < n_dim_; ++dim) {
         compute_cum_sum(dim);
     }
 
@@ -73,22 +83,85 @@ void Decision_stump_learning::sort(){
     }*/
 }
 
-std::vector<float> Decision_stump_learning::compute_cum_sum(unsigned int dim){
-    std::vector<float> cumsums(n_training_samples_, 0);
+/* Total sum
+    1 1 0 0 1 1
+    w1, w2, w3, w4, w5, w6
 
-    /* sort and weight features in dimesion dim */
-    std::vector<float> sorted_weighted_feats(n_training_samples_, 0);
-    for(unsigned int i = 0; i < n_training_samples_; ++i){
-        auto ind = order_[dim][i];
-        sorted_weighted_feats[i] = training_data_[ind].features[dim] * training_data_[ind].weight;
+    a= w1+w2+w5+w6
+    b= w3+w4
+
+    a = w2+w5+w6
+    b = w1+w3+w4 = all - a
+
+
+
+    */
+std::vector<float> Decision_stump_learning::compute_cum_sum(unsigned char dim){
+    std::vector<float> sum_left(n_training_samples_, 0);
+    std::vector<float> sum_right(n_training_samples_, 0);
+
+    DecisionStump ds;
+    ds.dimension = dim;
+    ds.direction = direction_t::left;
+    for (unsigned int i = 0; i < n_training_samples_; ++i){
+        const auto & sample = training_data_[order_[dim][i]];
+        ds.threshold = sample.features[dim];
+        if (I(sample, ds) == 1){
+            sum_left[0] += sample.weight;
+        }
+        else{
+            sum_right[0] += sample.weight;
+        }
     }
 
-    std::partial_sum(sorted_weighted_feats.begin(), sorted_weighted_feats.end(), cumsums.begin());
+    for (unsigned int i = 0; i < n_training_samples_-1; ++i){
+        const auto & sample = training_data_[order_[dim][i]];
+        ds.threshold = training_data_[order_[dim][i+1]].features[dim];
+        if (I(sample, ds) == 1){
+            sum_left[i+1]=sum_left[i]+sample.weight;
+            sum_right[i+1]=sum_right[i]-sample.weight;
+        }
+        else{
+            sum_left[i+1]=sum_left[i]-sample.weight;
+            sum_right[i+1]=sum_right[i]+sample.weight;
+        }
 
-    /*for (auto it = cumsums.begin(); it != cumsums.end(); ++it){
-        std::cout << "- " << *it << std::endl;
     }
-    std::cout << training_data_[0].weight << std::endl;*/
+
+    std::cout<<"dimension "<<dim<<std::endl;
+    for(unsigned int i=0; i<sum_left.size(); ++i){
+        const auto & sample = training_data_[order_[dim][i]];
+        std::cout<<sample.features[dim]<<" ";
+    }
+    for(unsigned int i=0; i<sum_left.size(); ++i){
+        const auto & sample = training_data_[order_[dim][i]];
+        std::cout<<static_cast<int>(sample.label)<<" ";
+    }
+    std::cout<<std::endl;
+    for(unsigned int i=0; i<sum_left.size(); ++i){
+        std::cout<<sum_left[i]<<" ";
+    }
+    std::cout<<std::endl;
+    for(unsigned int i=0; i<sum_right.size(); ++i){
+        std::cout<<sum_right[i]<<" ";
+    }
+    std::cout<<std::endl;
+
+    return sum_left;
 
 }
+
+unsigned short Decision_stump_learning::I(const Weighted_labeled_sample & sample,
+                                          const DecisionStump ds){
+
+    Decision_stump_prediction<const Weighted_labeled_sample> predictor(ds);
+    if (predictor.classify(sample) == sample.label){
+        return 1u;
+    }
+
+    else{
+        return 0u;
+    }
+}
+
 

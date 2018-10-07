@@ -30,6 +30,10 @@ struct Sorting_sample{
 };
 
 struct DecisionStump{
+    DecisionStump(unsigned char dimension, float threshold, direction_t direction);
+
+    DecisionStump();
+
     unsigned char dimension;
     float threshold;
     direction_t direction;
@@ -42,8 +46,11 @@ struct DecisionStump{
  * Samples on the left are class1, samples on the right, class0
  */
 template <typename T>
-class Decision_stump_prediction : public DecisionStump{
+class Decision_stump_prediction : private DecisionStump{
 public:
+
+    Decision_stump_prediction(const DecisionStump & ds) : DecisionStump(ds) {}
+
     std::vector<label_t> classify(const std::vector<T> & data){
         std::vector<label_t> confidence;
         for(auto & datum : data) {
@@ -69,7 +76,7 @@ public:
     }
 };
 
-class Decision_stump_learning : public DecisionStump{
+class Decision_stump_learning{
 public:
     Decision_stump_learning(wlabeled_data_t & training_data);
     ~Decision_stump_learning()= default;
@@ -77,11 +84,15 @@ public:
 
 private:
     wlabeled_data_t & training_data_;
-    std::vector<std::vector<int>> order_;
-    unsigned int n_dim_;
+    std::vector<std::vector<unsigned int>> order_;
+    std::vector<float> sum_left_;
+    std::vector<float> sum_right_;
+    unsigned char n_dim_;
     unsigned int n_training_samples_;
     void sort();
-    std::vector<float> compute_cum_sum(unsigned int dim);
+    std::vector<float> compute_cum_sum(unsigned char dim);
+    unsigned short I(const Weighted_labeled_sample & sample,
+                     const DecisionStump ds);
     unsigned char select_dimension();
     direction_t select_direction();
     void update_wclassifier();

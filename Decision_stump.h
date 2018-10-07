@@ -90,7 +90,7 @@ private:
     unsigned char n_dim_;
     unsigned int n_training_samples_;
     void sort();
-    std::vector<float> compute_cum_sum(unsigned char dim);
+    void compute_cum_sum(unsigned char dim);
     unsigned short I(const Weighted_labeled_sample & sample,
                      const DecisionStump ds);
     unsigned char select_dimension();

@@ -37,6 +37,8 @@ Decision_stump_learning::Decision_stump_learning(wlabeled_data_t & training_data
     if (!training_data.empty()){
         n_dim_ = training_data_[0].features.size();
         order_.resize(n_dim_, std::vector<unsigned int>(n_training_samples_,0));
+        sum_left_.resize(n_training_samples_,0);
+        sum_right_.resize(n_training_samples_,0);
         sort();
     }
 };
@@ -83,72 +85,56 @@ void Decision_stump_learning::sort(){
     }*/
 }
 
-/* Total sum
-    1 1 0 0 1 1
-    w1, w2, w3, w4, w5, w6
-
-    a= w1+w2+w5+w6
-    b= w3+w4
-
-    a = w2+w5+w6
-    b = w1+w3+w4 = all - a
-
-
-
-    */
-std::vector<float> Decision_stump_learning::compute_cum_sum(unsigned char dim){
-    std::vector<float> sum_left(n_training_samples_, 0);
-    std::vector<float> sum_right(n_training_samples_, 0);
+void Decision_stump_learning::compute_cum_sum(unsigned char dim){
+    std::fill(sum_left_.begin(), sum_left_.end(), 0);
+    std::fill(sum_right_.begin(), sum_right_.end(), 0);
 
     DecisionStump ds;
     ds.dimension = dim;
     ds.direction = direction_t::left;
+    /*cum sum; threshold at the very left*/
     for (unsigned int i = 0; i < n_training_samples_; ++i){
         const auto & sample = training_data_[order_[dim][i]];
         ds.threshold = sample.features[dim];
         if (I(sample, ds) == 1){
-            sum_left[0] += sample.weight;
+            sum_left_[0] += sample.weight;
         }
         else{
-            sum_right[0] += sample.weight;
+            sum_right_[0] += sample.weight;
         }
     }
-
+    /*cum sum moving threshold to the right*/
     for (unsigned int i = 0; i < n_training_samples_-1; ++i){
         const auto & sample = training_data_[order_[dim][i]];
         ds.threshold = training_data_[order_[dim][i+1]].features[dim];
         if (I(sample, ds) == 1){
-            sum_left[i+1]=sum_left[i]+sample.weight;
-            sum_right[i+1]=sum_right[i]-sample.weight;
+            sum_left_[i+1]=sum_left_[i]+sample.weight;
+            sum_right_[i+1]=sum_right_[i]-sample.weight;
         }
         else{
-            sum_left[i+1]=sum_left[i]-sample.weight;
-            sum_right[i+1]=sum_right[i]+sample.weight;
+            sum_left_[i+1]=sum_left_[i]-sample.weight;
+            sum_right_[i+1]=sum_right_[i]+sample.weight;
         }
 
     }
-
     std::cout<<"dimension "<<dim<<std::endl;
-    for(unsigned int i=0; i<sum_left.size(); ++i){
+    for(unsigned int i=0; i<sum_left_.size(); ++i){
         const auto & sample = training_data_[order_[dim][i]];
         std::cout<<sample.features[dim]<<" ";
     }
-    for(unsigned int i=0; i<sum_left.size(); ++i){
+    for(unsigned int i=0; i<sum_left_.size(); ++i){
         const auto & sample = training_data_[order_[dim][i]];
         std::cout<<static_cast<int>(sample.label)<<" ";
     }
     std::cout<<std::endl;
-    for(unsigned int i=0; i<sum_left.size(); ++i){
-        std::cout<<sum_left[i]<<" ";
+    for(unsigned int i=0; i<sum_left_.size(); ++i){
+        std::cout<<sum_left_[i]<<" ";
     }
     std::cout<<std::endl;
-    for(unsigned int i=0; i<sum_right.size(); ++i){
-        std::cout<<sum_right[i]<<" ";
+    for(unsigned int i=0; i<sum_right_.size(); ++i){
+        std::cout<<sum_right_[i]<<" ";
     }
     std::cout<<std::endl;
-
-    return sum_left;
-
 }
 
 unsigned short Decision_stump_learning::I(const Weighted_labeled_sample & sample,
@@ -158,7 +144,6 @@ unsigned short Decision_stump_learning::I(const Weighted_labeled_sample & sample
     if (predictor.classify(sample) == sample.label){
         return 1u;
     }
-
     else{
         return 0u;
     }

@@ -22,7 +22,7 @@ void Learning::train_model(labeled_data_t & data)
 
 void Learning::reference_data(labeled_data_t & data){
     for(auto & datum : data){
-        training_data_.emplace_back(Weighted_labeled_sample(datum));
+        training_data_.emplace_back(WLSample_t(datum));
     }
 }
 
@@ -38,7 +38,7 @@ void Learning::init_weights_even(){
 
 void Learning::recompute_weights(){
     for(auto & datum : training_data_){
-        //Decision_stump_prediction<Weighted_labeled_sample> dsp;
+        //Decision_stump_prediction<WLSample_t> dsp;
         float Z = compute_normalizer();
         //char error= static_cast<char>(dsp.classify(datum)) * static_cast<char>(datum.label);
 

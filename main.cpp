@@ -21,7 +21,10 @@
 // sign, dimension, voting weight
 
 struct A{
-    std::vector <int> v {1,65,12,34};
+    A(int a, int b) : a(a), b(b) {}
+
+    int a,b;
+
 
 };
 int main() {
@@ -35,19 +38,40 @@ int main() {
 
     adaboost::Learning learning(1);
     learning.train_model(data);
+    std::vector<A> a;
+    a.emplace_back(2,4);
+    a.emplace_back(2,4);
+    a.emplace_back(3,7);
+    a.emplace_back(4,42);
+    a.emplace_back(4,9);
+    a.emplace_back(4,3);
+    a.emplace_back(5,1);
+    a.emplace_back(5,3);
+    a.emplace_back(6,14);
+    a.emplace_back(6,24);
+
+    auto right_value=a.begin()->b;
+    auto it_left=a.begin();
+    for(auto it_right=a.begin(); it_right!=a.end()-1; ++it_right){
+        if(it_right->a!=(it_right+1)->a){
+            for(auto it2=it_left; it2!=it_right+1; ++it2){
+                it2->b=right_value;
+            }
+            right_value=(it_right+1)->b;
+            it_left=it_right+1;
+        }
+        else if(it_right==a.end()-2){
+            for(auto it2=it_left; it2!=a.end(); ++it2){
+                it2->b=right_value;
+            }
+        }
+    }
 
 
-    std::vector <int> v {1,4,12,20};
-    std::vector <int> result(v.size(), 0);
-    int acc=0;
-    auto vv{20u};
-    std::partial_sum(v.begin(), v.end(), result.begin(), [&vv](auto &a, auto &b){ return a + vv*b; });
-    for(auto it = result.begin(); it != result.end(); ++it)
-        std::cout << *it << std::endl;
-    //std::cout << v.size() << " " << acc << std::endl;
+    for(auto it=a.begin(); it!=a.end(); ++it){
+        std::cout<<it->a<<" "<<it->b<<std::endl;
+    }
 
 
-    //auto max = std::max_element(v.begin(),v.end());
-    //std::cout << *max << std::endl;
     return 0;
 }

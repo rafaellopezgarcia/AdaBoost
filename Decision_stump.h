@@ -1,40 +1,65 @@
 #pragma once
 #include <vector>
+#include <ostream>
 #include "Supervised_learning.h"
 
-struct Weighted_labeled_sample;
-struct DecisionStump;
-using wlabeled_data_t = std::vector<Weighted_labeled_sample>;
+/*nomenclature
+ * u->unidimensional
+ * w->weighted
+ * l->labeled
+ * s->sample
+ * t->training
+ * ds->dataset
+ * */
 
+struct WLSample_t;
+struct UWLSample_t;
+struct DecisionStump;
+
+using WLData_t=std::vector<WLSample_t>;
+using UWLData_t=std::vector<UWLSample_t>;
 
 enum class direction_t{
     left,
     right
 };
 
-struct Weighted_labeled_sample{
-    explicit Weighted_labeled_sample(Labeled_sample & ls);
-    ~Weighted_labeled_sample()=default;
-    Weighted_labeled_sample &operator=(const Weighted_labeled_sample & rhs) = delete;
+/*Weighted Labeled Sample*/
+struct WLSample_t{
+    explicit WLSample_t(Labeled_sample & ls);
+    ~WLSample_t()=default;
+    WLSample_t &operator=(const WLSample_t & rhs) = delete;
 
     const std::vector<float> &features;
     const label_t & label;
     float weight;
 };
 
-struct Sorting_sample{
-    explicit Sorting_sample(const std::vector<float> &features, unsigned int ind);
-    Sorting_sample &operator=(const Sorting_sample & rhs);
+/*Unidimensional Weighted Labeled Sample*/
+struct UWLSample_t{
+    UWLSample_t(const WLSample_t & wls, unsigned short dim);
+    UWLSample_t();
+    float feature;
+    label_t label;
+    float weight;
+    unsigned short dim;
+    float cumsum;
+
+    friend std::ostream &operator<<(std::ostream &os, const UWLSample_t &sample);
+};
+
+/*Sorting sample*/
+struct SortingSample_t{
+    explicit SortingSample_t(const std::vector<float> &features, unsigned int ind);
+    SortingSample_t &operator=(const SortingSample_t & rhs);
     const std::vector<float> &features;
     unsigned int ind;
 };
 
 struct DecisionStump{
     DecisionStump(unsigned char dimension, float threshold, direction_t direction);
-
     DecisionStump();
-
-    unsigned char dimension;
+    unsigned short dimension;
     float threshold;
     direction_t direction;
     float voting_weight;
@@ -78,39 +103,24 @@ public:
 
 class Decision_stump_learning{
 public:
-    Decision_stump_learning(wlabeled_data_t & training_data);
+    explicit Decision_stump_learning(WLData_t & training_data);
     ~Decision_stump_learning()= default;
+    /*learn a weak classifier*/
     DecisionStump learn_stump();
 
 private:
-    wlabeled_data_t & training_data_;
+    WLData_t & training_data_;
     std::vector<std::vector<unsigned int>> order_;
-    std::vector<float> sum_left_;
-    std::vector<float> sum_right_;
-    unsigned char n_dim_;
+    unsigned short n_dim_;
     unsigned int n_training_samples_;
+
+    UWLData_t create_unidimensional_set(unsigned short dim);
+    /*sort samples in ascending order along all dimensions*/
     void sort();
-    void compute_cum_sum(unsigned char dim);
-    unsigned short I(const Weighted_labeled_sample & sample,
+    /*compute N weighted cumulative sums*/
+    void compute_cum_sum(UWLData_t &uwl_data);
+    /*adjacent adjustment of the cumulative sum*/
+    unsigned short I(const WLSample_t & sample,
                      const DecisionStump ds);
-    unsigned char select_dimension();
-    direction_t select_direction();
-    void update_wclassifier();
-    void compute_voting_weight();
-
-    // 1) Initialize weights
-
-    // For k = 1...K
-    // 2) Learn a weak classifier
-
-    // Given N training samples and m feature dimensionality
-    // 1.- For each of dimension
-    // 1.1) Sort samples in ascending order along dimension d
-    // 2.2) Compute N weighted cumulative sums
-    // 3.1) Select the weighted cumulative sum
-    // 2) Select global extremum of all m cumulative sums
-
-    // 3) Compute voting weight
-    // 4) Recompute weights
-
+    void update_optimal_stump(DecisionStump &ds,UWLData_t &uwl_data, float &max_cumsum);
 };

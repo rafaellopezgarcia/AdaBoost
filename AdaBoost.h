@@ -25,7 +25,7 @@ namespace adaboost{
         weight_t weight_init_; // Weight initialization type
 
         // Input
-        wlabeled_data_t training_data_;
+        WLData_t training_data_;
         unsigned int N_; // Number of training samples
 
         // Output

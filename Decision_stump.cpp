@@ -44,7 +44,6 @@ SortingSample_t &SortingSample_t::operator=(const SortingSample_t & rhs){
     return *this;
 }
 
-DecisionStump::DecisionStump() {}
 
 DecisionStump::DecisionStump(unsigned char dimension, float threshold,
                              direction_t direction) :
@@ -75,7 +74,7 @@ DecisionStump Decision_stump_learning::learn_stump(){
         compute_cum_sum(uwl_data);
         update_optimal_stump(ds, uwl_data, max);
     }
-
+    return ds;
 }
 
 void Decision_stump_learning::sort(){
@@ -112,9 +111,7 @@ void Decision_stump_learning::sort(){
 }
 
 UWLData_t Decision_stump_learning::create_unidimensional_set(uint16_t dim){
-    /*unidimensional training_set*/
-    UWLData_t uts;
-    /*unidimensional weighted sample*/
+    UWLData_t uts;/*unidimensional training_set*/
     auto uws=UWLSample_t(training_data_[order_[dim][0]],dim);
     for(unsigned int i=1; i<n_training_samples_; ++i){
         auto sample=training_data_[order_[dim][i]];
@@ -150,9 +147,9 @@ void Decision_stump_learning::compute_cum_sum(UWLData_t &uwl_data){
         uwl_data[0].cumsum+=sample.weight* static_cast<int>(sample.label);
     }
     /*cum sum moving threshold to the right*/
-    for (unsigned int i = 0; i < n_training_samples_-1; ++i){
-        const auto & sample = uwl_data[i];
-        uwl_data[i+1].cumsum=sample.cumsum-2*sample.weight* static_cast<int>(sample.label);
+    for (unsigned int i=1; i<n_training_samples_; ++i){
+        const auto & sample = uwl_data[i-1];
+        uwl_data[i].cumsum=sample.cumsum-2*sample.weight* static_cast<int>(sample.label);
     }
 
     /*for(auto it=uwl_data.begin();it!=uwl_data.end();++it){
@@ -161,13 +158,14 @@ void Decision_stump_learning::compute_cum_sum(UWLData_t &uwl_data){
     std::cout<<std::endl;
 }
 
-void Decision_stump_learning::update_optimal_stump(DecisionStump &ds,UWLData_t &uwl_data, float &max_cumsum){
+void Decision_stump_learning::update_optimal_stump(DecisionStump &ds,UWLData_t &uwl_data,
+                                                   float &max_cumsum){
     auto criteria=[](auto &a, auto&b){return a.cumsum<b.cumsum;};
 
     auto max=std::max_element(uwl_data.begin(),uwl_data.end(), criteria);
     auto min=std::min_element(uwl_data.begin(),uwl_data.end(), criteria);
     auto virtual_optimal=fabs(max->cumsum)>fabs(min->cumsum) ? max : min;
-    
+
     if(fabs(virtual_optimal->cumsum)>fabs(max_cumsum)){
         max_cumsum=virtual_optimal->cumsum;
         ds.threshold=virtual_optimal->feature;
@@ -176,16 +174,6 @@ void Decision_stump_learning::update_optimal_stump(DecisionStump &ds,UWLData_t &
     }
 }
 
-unsigned short Decision_stump_learning::I(const WLSample_t & sample,
-                                          const DecisionStump ds){
 
-    Decision_stump_prediction<const WLSample_t> predictor(ds);
-    if (predictor.classify(sample) == sample.label){
-        return 1u;
-    }
-    else{
-        return 0u;
-    }
-}
 
 

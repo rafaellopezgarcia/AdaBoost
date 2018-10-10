@@ -58,7 +58,7 @@ struct SortingSample_t{
 
 struct DecisionStump{
     DecisionStump(unsigned char dimension, float threshold, direction_t direction);
-    DecisionStump();
+    DecisionStump()= default;
     unsigned short dimension;
     float threshold;
     direction_t direction;
@@ -74,7 +74,7 @@ template <typename T>
 class Decision_stump_prediction : private DecisionStump{
 public:
 
-    Decision_stump_prediction(const DecisionStump & ds) : DecisionStump(ds) {}
+    explicit Decision_stump_prediction(const DecisionStump & ds) : DecisionStump(ds) {}
 
     std::vector<label_t> classify(const std::vector<T> & data){
         std::vector<label_t> confidence;
@@ -95,7 +95,7 @@ public:
         else if (feature_value < threshold && direction == direction_t::right) {
             return label_t::class1;
         }
-        else if (feature_value >= threshold && direction == direction_t::right) {
+        else {
             return label_t::class0;
         }
     }
@@ -112,15 +112,12 @@ private:
     WLData_t & training_data_;
     std::vector<std::vector<unsigned int>> order_;
     unsigned short n_dim_;
-    unsigned int n_training_samples_;
+    unsigned long n_training_samples_;
 
     UWLData_t create_unidimensional_set(unsigned short dim);
     /*sort samples in ascending order along all dimensions*/
     void sort();
     /*compute N weighted cumulative sums*/
     void compute_cum_sum(UWLData_t &uwl_data);
-    /*adjacent adjustment of the cumulative sum*/
-    unsigned short I(const WLSample_t & sample,
-                     const DecisionStump ds);
     void update_optimal_stump(DecisionStump &ds,UWLData_t &uwl_data, float &max_cumsum);
 };

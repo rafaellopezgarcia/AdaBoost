@@ -18,10 +18,6 @@ UWLSample_t::UWLSample_t(const WLSample_t & wls, unsigned short dim) :
 {
 }
 
-UWLSample_t::UWLSample_t()
-{
-}
-
 std::ostream &operator<<(std::ostream &os, const UWLSample_t &sample) {
     os<<sample.feature<< " ";
     os<< static_cast<int>(sample.label)<< " ";
@@ -44,12 +40,12 @@ SortingSample_t &SortingSample_t::operator=(const SortingSample_t & rhs){
     return *this;
 }
 
-
 DecisionStump::DecisionStump(unsigned char dimension, float threshold,
                              direction_t direction) :
         dimension(dimension),
         threshold(threshold),
-        direction(direction)
+        direction(direction),
+        voting_weight(0.f)
 {
 }
 
@@ -58,7 +54,7 @@ Decision_stump_learning::Decision_stump_learning(WLData_t & training_data):
         n_training_samples_(training_data_.size())
 {
     if (!training_data.empty()){
-        n_dim_ = training_data_[0].features.size();
+        n_dim_ = static_cast<unsigned short>(training_data_[0].features.size());
         order_.resize(n_dim_, std::vector<unsigned int>(n_training_samples_,0));
         sort();
     }
@@ -68,7 +64,6 @@ DecisionStump Decision_stump_learning::learn_stump(){
     DecisionStump ds;
     auto max=0.f;
     /*select optimal threshold and dimension*/
-    std::vector<std::pair<float,float>> training_data_dim(n_training_samples_);
     for(unsigned short dim=0u; dim<n_dim_; ++dim) {
         UWLData_t uwl_data=create_unidimensional_set(dim);
         compute_cum_sum(uwl_data);
@@ -173,7 +168,3 @@ void Decision_stump_learning::update_optimal_stump(DecisionStump &ds,UWLData_t &
         //std::cout<<"updated "<<max_cumsum<<std::endl;
     }
 }
-
-
-
-

@@ -3,7 +3,6 @@
 #include <iostream>
 using namespace adaboost;
 
-
 Learning::Learning(unsigned short K, weight_t weight_init) : K_{K},
                                                              weight_init_{weight_init}{
 }

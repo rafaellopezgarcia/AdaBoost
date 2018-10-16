@@ -38,7 +38,7 @@ struct WLSample_t{
 /*Unidimensional Weighted Labeled Sample*/
 struct UWLSample_t{
     UWLSample_t(const WLSample_t & wls, unsigned short dim);
-    UWLSample_t();
+    UWLSample_t()= default;
     float feature;
     label_t label;
     float weight;
@@ -77,11 +77,11 @@ public:
     explicit Decision_stump_prediction(const DecisionStump & ds) : DecisionStump(ds) {}
 
     std::vector<label_t> classify(const std::vector<T> & data){
-        std::vector<label_t> confidence;
+        std::vector<label_t> prediction;
         for(auto & datum : data) {
-            confidence.emplace_back(classify(datum));
+            prediction.emplace_back(classify(datum));
         }
-        return confidence;
+        return prediction;
     }
 
     label_t classify(const T & datum){
@@ -105,7 +105,6 @@ class Decision_stump_learning{
 public:
     explicit Decision_stump_learning(WLData_t & training_data);
     ~Decision_stump_learning()= default;
-    /*learn a weak classifier*/
     DecisionStump learn_stump();
 
 private:
